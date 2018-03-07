@@ -1,0 +1,2 @@
+class ManaCostParseException(Exception):
+    pass

@@ -1,0 +1,2 @@
+class CardPool(object):
+    pass
