@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterator
 
 from PIL.Image import Image
 
@@ -8,11 +8,12 @@ from utils import BoxFactory
 
 class ImageHalver(BaseImageProcessor):
     @classmethod
-    def process(cls, image: Image) -> List[Image]:
+    def process(cls, image: Image) -> Iterator[Image]:
         height = image.height
         width = image.width
 
         tophalf = BoxFactory.make(left=0, upper=0, right=width, lower=height / 2)
         bottomhalf = BoxFactory.make(left=0, upper=height / 2, right=width, lower=height)
 
-        return [image.crop(box=tophalf), image.crop(box=bottomhalf)]
+        yield image.crop(box=tophalf)
+        yield image.crop(box=bottomhalf)

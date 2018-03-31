@@ -1,8 +1,9 @@
 from typing import Mapping
 from typing import Tuple
 
-from PIL import Image
+from PIL.Image import Image
 
+from imageprocessors.exceptions import ImageExhaustedException
 from utils import percent_difference
 
 Left = int
@@ -10,12 +11,12 @@ Upper = int
 Right = int
 Lower = int
 
-ColorBox = Tuple[int, int, int, int]
+ColorBox = Tuple[int, int, int]
 PixelBox = Tuple[Left, Upper, Right, Lower]
 XYPixels = Tuple[int, int]
 
 
-class ImageProcessorUtils:
+class PixelUtils:
     @classmethod
     def location_of_first_occurrence(cls, color: ColorBox, image: Image,
                                      similarity_threshold: float = 0.0) -> XYPixels:
@@ -74,7 +75,7 @@ class ImageProcessorUtils:
             y += 1
         # TODO: Exception?
         # Only matches found
-        return None
+        raise ImageExhaustedException
 
     @classmethod
     def move_right_until_no_match(cls, color: ColorBox, image: Image, starting_xy_pixels: XYPixels = (0, 0),
@@ -82,18 +83,17 @@ class ImageProcessorUtils:
         x = starting_xy_pixels[0]
         y = starting_xy_pixels[1]
 
-        width = image.width
-
         x += 1
 
-        while x <= width:
-            pixel = image.getpixel((x, y))
-            if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
-                return pixel
-            else:
-                x += 1
-
-        return None
+        try:
+            while True:
+                pixel = image.getpixel((x, y))
+                if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
+                    return x
+                else:
+                    x += 1
+        except IndexError:
+            raise ImageExhaustedException
 
     @classmethod
     def move_left_until_no_match(cls, color: ColorBox, image: Image, starting_xy_pixels: XYPixels = (0, 0),
@@ -101,18 +101,17 @@ class ImageProcessorUtils:
         x = starting_xy_pixels[0]
         y = starting_xy_pixels[1]
 
-        width = image.width
-
         x -= 1
 
-        while x >= width:
-            pixel = image.getpixel((x, y))
-            if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
-                return pixel
-            else:
-                x -= 1
-
-        return None
+        try:
+            while True:
+                pixel = image.getpixel((x, y))
+                if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
+                    return x
+                else:
+                    x -= 1
+        except IndexError:
+            raise ImageExhaustedException
 
     @classmethod
     def move_down_until_no_match(cls, color: ColorBox, image: Image, starting_xy_pixels: XYPixels = (0, 0),
@@ -120,16 +119,17 @@ class ImageProcessorUtils:
         x = starting_xy_pixels[0]
         y = starting_xy_pixels[1]
 
-        y -= 1
+        y += 1
 
-        while y <= 0:
-            pixel = image.getpixel((x, y))
-            if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
-                return pixel
-            else:
-                y -= 1
-
-        return None
+        try:
+            while True:
+                pixel = image.getpixel((x, y))
+                if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
+                    return y
+                else:
+                    y += 1
+        except IndexError:
+            raise ImageExhaustedException
 
     @classmethod
     def move_up_until_no_match(cls, color: ColorBox, image: Image, starting_xy_pixels: XYPixels = (0, 0),
@@ -137,23 +137,22 @@ class ImageProcessorUtils:
         x = starting_xy_pixels[0]
         y = starting_xy_pixels[1]
 
-        height = image.height
+        y -= 1
 
-        y += 1
-
-        while y <= height:
-            pixel = image.getpixel((x, y))
-            if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
-                return pixel
-            else:
-                y += 1
-
-        return None
-
+        try:
+            while True:
+                pixel = image.getpixel((x, y))
+                if not cls.is_similar(pixel_one=pixel, pixel_two=color, similarity_threshold=similarity_threshold):
+                    return y
+                else:
+                    y -= 1
+        except IndexError:
+            raise ImageExhaustedException
 
     @classmethod
     def move_until_no_match(cls, color: ColorBox, image: Image, direction: Mapping[str, str],
                             starting_xy_pixels: XYPixels = (0, 0), similarity_threshold: float = 0.0) -> int:
+        # TODO: Review method in light looping with while True:
         if direction["pixel"] == "x":
             x = True
             moving_pixel = starting_xy_pixels[0]
@@ -182,9 +181,7 @@ class ImageProcessorUtils:
                 return moving_pixel
 
             moving_pixel = moving_pixel.__getattribute__(num_modifier)(1)
-        # TODO: Exception?
-        # Only matches found
-        return None
+        raise ImageExhaustedException
 
 
 # TODO: Decide if we even want to keep this considering preferring directional methods to the abstract
